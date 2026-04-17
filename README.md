@@ -1,7 +1,3 @@
-# Agnos DevOps Assignment
-
-This repository contains a production-ready DevOps setup for a simple API service and a background worker. The focus is on containerization, high availability, automated CI/CD, and basic observability.
-
 ## 1. Architecture Overview
 
 Here is a quick breakdown of how the system is put together:
