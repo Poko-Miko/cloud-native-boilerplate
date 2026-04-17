@@ -1,6 +1,6 @@
 # Cloud Native DevOps Assignment
 
-Production-ready sample for the Agnos DevOps assignment. The application is
+Production-ready sample for the Agnos DevOps assignment. The application is 
 intentionally small so the DevOps setup is the main deliverable.
 
 ## Architecture Overview
