@@ -68,4 +68,3 @@ First priority is mitigating the impact. We would immediately revert to the prev
 
 **d. Kubernetes node downs:**
 If we configured our cluster with multiple nodes, the system is designed to survive this. By using `podAntiAffinity` in the deployment spec, we force K8s to schedule the API replicas across different nodes. If one node dies, the Kubernetes Control Plane notices the node is "NotReady", evicts the pods, and automatically reschedules them onto the remaining healthy nodes. The service remains available through the surviving replicas during this transition.
-```
