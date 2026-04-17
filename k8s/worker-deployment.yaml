@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agnos-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agnos-worker
+  template:
+    metadata:
+      labels:
+        app: agnos-worker
+    spec:
+      containers:
+      - name: worker
+        image: agnos-worker:latest
+        env:
+        - name: APP_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: environment
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
