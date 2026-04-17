@@ -1,17 +1,25 @@
 FROM python:3.11-slim AS builder
+
 WORKDIR /app
+
 COPY src/requirements.txt .
-RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.txt
+RUN pip install --upgrade pip && \
+    pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.txt
 
 FROM python:3.11-slim
+
 WORKDIR /app
 
 COPY --from=builder /app/wheels /wheels
-RUN pip install --no-cache /wheels/*
-COPY src/api.py .
+RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
 
-ENV APP_ENV=DEV
+COPY src/worker.py /app/worker.py
 
-USER nobody # Security: run as non-root
-EXPOSE 8000
+ENV APP_ENV=PROD \
+    WORKER_INTERVAL_SECONDS=60 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+USER 65534:65534
+
 CMD ["python", "worker.py"]

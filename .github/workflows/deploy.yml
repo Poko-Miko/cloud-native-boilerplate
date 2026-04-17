@@ -1,49 +1,134 @@
 name: CI/CD Pipeline
+
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  REGISTRY: ghcr.io
+  IMAGE_OWNER: ${{ github.repository_owner }}
+  API_IMAGE_NAME: cloud-native-boilerplate-api
+  WORKER_IMAGE_NAME: cloud-native-boilerplate-worker
 
 jobs:
-  lint-and-test:
+  lint-test-build-push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout source
+        uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-      - name: Install flake8 & pytest
-        run: pip install flake8 pytest
-      - name: Lint with flake8
-        run: flake8 src/ --exit-zero
-      - name: Run Tests (Mock)
-        run: echo "Tests passed"
+          python-version: "3.11"
 
-  build-and-scan:
-    needs: lint-and-test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build Docker Image
-        run: docker build -t agnos-api:${{ github.sha }} -f Dockerfile.api .
-      - name: Run Trivy Vulnerability Scanner
-        uses: aquasecurity/trivy-action@master
+      - name: Install dependencies
+        run: |
+          pip install -r src/requirements.txt
+
+      - name: Run flake8
+        run: |
+          flake8 src/
+
+      - name: Run tests
+        run: |
+          PYTHONPATH=src pytest -q src/test_api.py
+
+      - name: Audit Python dependencies
+        run: |
+          pip install pip-audit==2.7.3
+          pip-audit -r src/requirements.txt
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
         with:
-          image-ref: 'agnos-api:${{ github.sha }}'
-          format: 'table'
-          exit-code: '0'
-          severity: 'CRITICAL,HIGH'
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build API image
+        run: |
+          docker build \
+            -f Dockerfile.api \
+            -t $REGISTRY/$IMAGE_OWNER/$API_IMAGE_NAME:${{ github.sha }} \
+            -t $REGISTRY/$IMAGE_OWNER/$API_IMAGE_NAME:latest \
+            .
+
+      - name: Build Worker image
+        run: |
+          docker build \
+            -f Dockerfile.worker \
+            -t $REGISTRY/$IMAGE_OWNER/$WORKER_IMAGE_NAME:${{ github.sha }} \
+            -t $REGISTRY/$IMAGE_OWNER/$WORKER_IMAGE_NAME:latest \
+            .
+
+      - name: Scan API image
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ env.API_IMAGE_NAME }}:${{ github.sha }}
+          format: table
+          exit-code: "1"
+          severity: HIGH,CRITICAL
+
+      - name: Scan Worker image
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ env.WORKER_IMAGE_NAME }}:${{ github.sha }}
+          format: table
+          exit-code: "1"
+          severity: HIGH,CRITICAL
+
+      - name: Push API image
+        run: |
+          docker push $REGISTRY/$IMAGE_OWNER/$API_IMAGE_NAME:${{ github.sha }}
+          docker push $REGISTRY/$IMAGE_OWNER/$API_IMAGE_NAME:latest
+
+      - name: Push Worker image
+        run: |
+          docker push $REGISTRY/$IMAGE_OWNER/$WORKER_IMAGE_NAME:${{ github.sha }}
+          docker push $REGISTRY/$IMAGE_OWNER/$WORKER_IMAGE_NAME:latest
 
   deploy:
-    needs: build-and-scan
+    needs: lint-test-build-push
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Deploy to K8s (Mock)
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Configure kubeconfig
         run: |
-          echo "kubectl apply -f k8s/configmap.yaml"
-          echo "kubectl set image deployment/agnos-api api=agnos-api:${{ github.sha }}"
-          echo "Deployment successful"
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Apply manifests
+        run: |
+          kubectl apply -f k8s/configmap.yaml
+          kubectl apply -f k8s/api-deployment.yaml
+          kubectl apply -f k8s/api-service.yaml
+          kubectl apply -f k8s/api-pdb.yaml
+          kubectl apply -f k8s/worker-deployment.yaml
+          kubectl apply -f k8s/hpa.yaml
+
+      - name: Update deployment images
+        run: |
+          kubectl set image deployment/agnos-api \
+            api=${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ env.API_IMAGE_NAME }}:${{ github.sha }}
+
+          kubectl set image deployment/agnos-worker \
+            worker=${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ env.WORKER_IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/agnos-api --timeout=180s
+          kubectl rollout status deployment/agnos-worker --timeout=180s

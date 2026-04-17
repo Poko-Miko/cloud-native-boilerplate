@@ -3,4 +3,5 @@ kind: ConfigMap
 metadata:
   name: app-config
 data:
-  environment: "PROD"
+  APP_ENV: "PROD"
+  WORKER_INTERVAL_SECONDS: "60"
