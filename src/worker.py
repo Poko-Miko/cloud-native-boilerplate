@@ -5,7 +5,7 @@ from datetime import date, datetime, timezone
 
 
 def build_logger() -> logging.Logger:
-    logger = logging.getLogger("agnos_worker")
+    logger = logging.getLogger("cloud_worker")
     logger.setLevel(logging.INFO)
 
     if not logger.handlers:
@@ -13,7 +13,7 @@ def build_logger() -> logging.Logger:
         handler.setFormatter(
             logging.Formatter(
                 '{"time":"%(asctime)s","level":"%(levelname)s",'
-                '"service":"agnos-worker","message":"%(message)s"}'
+                '"service":"cloud-worker","message":"%(message)s"}'
             )
         )
         logger.addHandler(handler)

@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: agnos-api
+  name: cloud-api
 spec:
   selector:
-    app: agnos-api
+    app: cloud-api
   ports:
     - protocol: TCP
       name: http

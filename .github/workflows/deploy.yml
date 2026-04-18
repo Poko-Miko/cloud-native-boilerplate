@@ -11,8 +11,8 @@ env:
   API_IMAGE_NAME: cloud-native-boilerplate-api
   WORKER_IMAGE_NAME: cloud-native-boilerplate-worker
   KUBE_NAMESPACE: default
-  API_DEPLOYMENT_NAME: agnos-api
-  WORKER_DEPLOYMENT_NAME: agnos-worker
+  API_DEPLOYMENT_NAME: cloud-api
+  WORKER_DEPLOYMENT_NAME: cloud-worker
   API_CONTAINER_NAME: api
   WORKER_CONTAINER_NAME: worker
 

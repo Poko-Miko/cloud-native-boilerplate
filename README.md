@@ -103,7 +103,7 @@ Check status:
 ```bash
 kubectl get pods
 kubectl get svc
-kubectl logs -l app=agnos-api
+kubectl logs -l app=cloud-api
 ```
 
 ## 📈 Scaling & Reliability

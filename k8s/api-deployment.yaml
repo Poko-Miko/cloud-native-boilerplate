@@ -1,13 +1,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: agnos-api
+  name: cloud-api
 spec:
   replicas: 2
   revisionHistoryLimit: 3
   selector:
     matchLabels:
-      app: agnos-api
+      app: cloud-api
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -16,7 +16,7 @@ spec:
   template:
     metadata:
       labels:
-        app: agnos-api
+        app: cloud-api
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/path: "/metrics"
@@ -41,7 +41,7 @@ spec:
                     - key: app
                       operator: In
                       values:
-                        - agnos-api
+                        - cloud-api
                 topologyKey: kubernetes.io/hostname
       containers:
         - name: api

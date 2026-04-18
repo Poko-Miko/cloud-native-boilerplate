@@ -15,7 +15,7 @@ from starlette.responses import Response
 
 
 def build_logger() -> logging.Logger:
-    logger = logging.getLogger("agnos_api")
+    logger = logging.getLogger("cloud_api")
     logger.setLevel(logging.INFO)
 
     if not logger.handlers:
@@ -23,7 +23,7 @@ def build_logger() -> logging.Logger:
         handler.setFormatter(
             logging.Formatter(
                 '{"time":"%(asctime)s","level":"%(levelname)s",'
-                '"service":"agnos-api","message":"%(message)s"}'
+                '"service":"cloud-api","message":"%(message)s"}'
             )
         )
         logger.addHandler(handler)
@@ -33,16 +33,16 @@ def build_logger() -> logging.Logger:
 
 
 logger = build_logger()
-app = FastAPI(title="Agnos API", version="1.0.0")
+app = FastAPI(title="Cloud API", version="1.0.0")
 STARTED_AT = time.time()
 
 REQUEST_COUNT = Counter(
-    "agnos_api_requests_total",
+    "cloud_api_requests_total",
     "Total HTTP requests handled by the API.",
     ["method", "path", "status"],
 )
 REQUEST_LATENCY = Histogram(
-    "agnos_api_request_duration_seconds",
+    "cloud_api_request_duration_seconds",
     "HTTP request latency in seconds.",
     ["method", "path"],
 )
@@ -79,7 +79,7 @@ app.add_middleware(SecurityHeadersMiddleware)
 @app.get("/")
 def root() -> dict:
     return {
-        "service": "agnos-api",
+        "service": "cloud-api",
         "status": "ok",
         "env": os.getenv("APP_ENV", "DEV"),
     }

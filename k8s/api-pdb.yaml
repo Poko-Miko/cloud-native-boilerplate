@@ -1,9 +1,9 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: agnos-api-pdb
+  name: cloud-api-pdb
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app: agnos-api
+      app: cloud-api

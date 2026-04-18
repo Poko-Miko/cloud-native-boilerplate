@@ -1,10 +1,10 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: agnos-alerts
+  name: cloud-alerts
 spec:
   groups:
-  - name: agnos-monitoring.rules
+  - name: cloud-monitoring.rules
     rules:
     - alert: HighErrorRate
       expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05

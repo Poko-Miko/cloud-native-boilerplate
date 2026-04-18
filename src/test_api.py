@@ -10,7 +10,7 @@ def test_root():
     response = client.get("/")
     assert response.status_code == 200
     data = response.json()
-    assert data["service"] == "agnos-api"
+    assert data["service"] == "cloud-api"
     assert data["status"] == "ok"
 
 
@@ -32,7 +32,7 @@ def test_ready():
 def test_metrics():
     response = client.get("/metrics")
     assert response.status_code == 200
-    assert "agnos_api_requests_total" in response.text
+    assert "cloud_api_requests_total" in response.text
 
 
 def test_security_headers():
